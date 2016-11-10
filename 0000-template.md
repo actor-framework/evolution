@@ -1,9 +1,8 @@
 # Name for the proposal
 
-Related Issue: (can be left blank)
-Related PR: (can be left blank)
-Status: Awaiting
-Decision Notes:
+* Proposal: [SE-0000](0000-template.md)
+* Author: [Firstname Lastname](https://github.com/username)
+* Status: Awaiting
 
 ## Introduction
 
@@ -13,9 +12,13 @@ A short overview.
 
 What is addressed in the proposal and why is it important for CAF?
 
-## Proposal / Solution
+## Proposed Solution
 
 A detailed explanation of the proposal.
+
+## Impact on Existing Code
+
+What changes to the existing code base are required?
 
 ## Alternatives
 
