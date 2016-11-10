@@ -1,7 +1,9 @@
 # Name for the proposal
 
-Related issue: (can be left blank)
+Related Issue: (can be left blank)
 Related PR: (can be left blank)
+Status: Awaiting
+Decision Notes:
 
 ## Introduction
 
@@ -18,4 +20,3 @@ A detailed explanation of the proposal.
 ## Alternatives
 
 What are the alternatives and why not pick one of them?
-

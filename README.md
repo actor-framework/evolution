@@ -14,8 +14,19 @@ Small contributions, bugfixes and low-impact changes should still be posed direc
 2. Fill in the template. The issue and PR fields are optional.
 3. Open a pull request with the proposal.
 4. Discussion takes place in the PR.
-5. Accepted RFCs are merged into the repository.
+5. When a decision is reached, the RFC is merged into the repository.
 
-An accepted RFC does not lead to prioritization regarding its implementations. 
+An accepted RFC does not lead to prioritization regarding its implementations.
+
+# Reviewing
+
+The status of a document is on of the following, starting with awaiting when created:
+
+* **accepted:** Accepted RFC that has not been implemented.
+* **active:** Currently under review.
+* **awaiting:** Awaiting review.
+* **implemented:** Accepted and implemented in CAF.
+* **rejected:** Rejected by the review process.
+* **withdrawn:** Withdrawn by the proposer.
 
 *The review and acceptance process still require specification.*
