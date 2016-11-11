@@ -23,29 +23,66 @@ such as ShiViz to get comprehensible and interactive output.
 
 ## Proposed Solution
 
-All actors, e.g., event-based and blocking, log the following three events
-using the DEBUG category in the same way: 1) SEND: enqueueing a message to a
-mailbox, 2) RECEIVE: start processing a message, and 3) DROP: discarding a
-message in case the receiver is already down. These entries should have the
-form `<event> ; FROM = <sender> ; TO = <receiver> ; STAGES = <stages> ; CONTENT
-= <content>`.
+Standardizing CAF events in the DEBUG category can greatly aid developers in
+understanding logs. Only grepping these events reveals the flow of messages and
+lifetimes of actors. Further, tools can automatically deduce happens-before
+relations from these standardized events by matching `SEND` to `RECEIVE`
+events.
 
 This enables us to scan log files for matching entries in order to establish a
-happen-before relation. The relation is then be used by a new tool (e.g.
+happen-before relation. The relation is then used by a new tool (e.g.
 "CafVector") to automatically enhance the log files with vector timestamps for
 ShiViz.
 
+In detail, I propose the following standard format for message and lifetime
+related events:
+
+- `SPAWN ; ID = <id> ; TYPE = <type> ; ARGS = <args>`
+  + create a new actor
+  + `id`: assigned actor_id
+  + `type`: actor type name or "fun" when spawning a function-based actor
+  + `args`: initialization arguments
+- `SEND ; TO = <receiver> ; FROM = <sender> ; STAGES = <stages> ; CONTENT = <content>`
+  + enqueue a message into a mailbox
+  + `receiver`: actor address of the receiver
+  + `sender`: actor address of the sender
+  + `stages`: vector of actor addresses denoting the processing pipeline
+  + `content`: payload as type-erased tuple
+- `REJECT ; TO = <receiver> ; FROM = <sender> ; STAGES = <stages> ; CONTENT = <content>`
+  + enqueueing failed because the receiver is already down
+  + `receiver`: actor address of the receiver
+  + `sender`: actor address of the sender
+  + `stages`: vector of actor addresses denoting the processing pipeline
+  + `content`: payload as type-erased tuple
+- `RECEIVE ; FROM = <sender> ; STAGES = <stages> ; CONTENT = <content>`
+  + dequeue a message from the mailbox
+  + `sender`: actor address of the sender
+  + `stages`: vector of actor addresses denoting the processing pipeline
+  + `content`: payload as type-erased tuple
+- `DROP`
+  + discard current message because it is unexected or receiver terminates
+- `SKIP`
+  + put current message back into the mailbox for later retrieval
+- `FINALIZE`
+  + start sending response messages etc. after handling a message successfully
+- ``
+- `TERMINATE ; REASON = <reason>`
+  + stop an actor
+  + `reason`: exit reason as observed by other actors
+
+Every `RECEIVE` event is followed by exactly one `DROP`, `SKIP`, or `FINALIZE`
+event. A `SKIP` event causes a `RECEIVE` event for the same message again
+later.
+
+It is worth mentioning that the `SPAWN` event is logged from the creator of an
+actor *before* calling constructors. This allows developers (and tools) to
+extract spawned-by relations for all actors in the system.
+
 ## Impact on Existing Code
 
-* Three new macros for logging the events uniformly: `CAF_LOG_SEND_EVENT`,
-  `CAF_LOG_RECEIVE_EVENT`, and `CAF_LOG_DROP_EVENT`.
-* Using `CAF_LOG_SEND_EVENT` in all implementations of the virtual member
-  function `enqueue`.
-* Using `CAF_LOG_DROP_EVENT` in `enqueue` in case message delivery fails due to
-  a closed mailbox (i.e. the receiving actor is already down). Further, the
-  mailbox needs to call the macro on each discarded message after closing.
-* Using `CAF_LOG_RECEIVE_EVENT` in all actor types before calling into
-  user-defined message handlers.
+New macros for logging the events uniformly, e.g.: `CAF_LOG_SEND_EVENT`,
+`CAF_LOG_RECEIVE_EVENT`, and `CAF_LOG_DROP_EVENT`, and using the macros in all
+actor implementations appropriately.
 
 ## Alternatives
 
@@ -54,4 +91,5 @@ parse the current log output. However, there is no uniform way in which actors
 log these events at the moment. This would make parsing code unnecessarily
 complex and tedious. Further, the proposed solution only requires DEBUG log
 level, whereas currently many enqueue implementations only log incoming
-messages at TRACE level.
+messages at TRACE level. The new standardization of CAF events also makes it
+much easier for humans to grasp complex system behavior.
