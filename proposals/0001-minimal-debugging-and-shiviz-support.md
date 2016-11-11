@@ -65,7 +65,6 @@ related events:
   + put current message back into the mailbox for later retrieval
 - `FINALIZE`
   + start sending response messages etc. after handling a message successfully
-- ``
 - `TERMINATE ; REASON = <reason>`
   + stop an actor
   + `reason`: exit reason as observed by other actors
