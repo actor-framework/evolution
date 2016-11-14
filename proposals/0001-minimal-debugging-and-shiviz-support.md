@@ -42,21 +42,20 @@ related events:
   + `id`: assigned actor_id
   + `type`: actor type name or "fun" when spawning a function-based actor
   + `args`: initialization arguments
-- `SEND ; TO = <receiver> ; FROM = <sender> ; STAGES = <stages> ; CONTENT = <content>`
+- `SEND ; TO = <dest> ; FROM = <src> ; STAGES = <stages> ; CONTENT = <content>`
   + enqueue a message into a mailbox
-  + `receiver`: actor address of the receiver
-  + `sender`: actor address of the sender
+  + `dest`: actor address of the receiver
+  + `src`: actor address of the sender 
   + `stages`: vector of actor addresses denoting the processing pipeline
   + `content`: payload as type-erased tuple
-- `REJECT ; TO = <receiver> ; FROM = <sender> ; STAGES = <stages> ; CONTENT = <content>`
-  + enqueueing failed because the receiver is already down
-  + `receiver`: actor address of the receiver
-  + `sender`: actor address of the sender
-  + `stages`: vector of actor addresses denoting the processing pipeline
-  + `content`: payload as type-erased tuple
-- `RECEIVE ; FROM = <sender> ; STAGES = <stages> ; CONTENT = <content>`
+- `REJECT`
+  + enqueueing failed because the mailbox is closed (usually indicating that
+    the receiver is already down)
+- `ACCEPT`
+  + enqueueing a message into a mailbox was successful
+- `RECEIVE ; FROM = <src> ; STAGES = <stages> ; CONTENT = <content>`
   + dequeue a message from the mailbox
-  + `sender`: actor address of the sender
+  + `src`: actor address of the sender
   + `stages`: vector of actor addresses denoting the processing pipeline
   + `content`: payload as type-erased tuple
 - `DROP`
