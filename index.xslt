@@ -23,6 +23,11 @@
         </xsl:call-template>
 
         <xsl:call-template name="section">
+          <xsl:with-param name="title">Implementation in progress</xsl:with-param>
+          <xsl:with-param name="proposals" select="proposal[@status='in-progress']"/>
+        </xsl:call-template>
+
+        <xsl:call-template name="section">
           <xsl:with-param name="title">Proposals awaiting review</xsl:with-param>
           <xsl:with-param name="proposals" select="proposal[@status='awaiting']"/>
         </xsl:call-template>
