@@ -219,6 +219,10 @@
       a.number.status-accepted {
         background-color: #5abc4e;
       }
+      a.number.status-in-progress {
+        background-color: #5abc4e;
+        background: repeating-linear-gradient(135deg, #5abc4e, #5abc4e 14.29%, #319021 14.29%, #319021 28.57%);
+      }
       a.number.status-active {
         background-color: #297de4;
       }
