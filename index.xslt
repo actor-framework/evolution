@@ -24,7 +24,7 @@
 
         <xsl:call-template name="section">
           <xsl:with-param name="title">Implementation in progress</xsl:with-param>
-          <xsl:with-param name="proposals" select="proposal[@status='in-progress']"/>
+          <xsl:with-param name="proposals" select="proposal[@status='implementing']"/>
         </xsl:call-template>
 
         <xsl:call-template name="section">
@@ -219,7 +219,7 @@
       a.number.status-accepted {
         background-color: #5abc4e;
       }
-      a.number.status-in-progress {
+      a.number.status-implementing {
         background-color: #5abc4e;
         background: repeating-linear-gradient(135deg, #5abc4e, #5abc4e 14.29%, #319021 14.29%, #319021 28.57%);
       }
