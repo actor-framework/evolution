@@ -6,7 +6,7 @@
 
 ## Introduction
 
-On modern multiprocessor systems an actor scheduler have to be aware of the underlying hardware to minimize performance penalties.
+On modern multiprocessor systems an actor scheduler has to be aware of the underlying hardware in order to minimize performance penalties.
 
 ## Motivation
 
