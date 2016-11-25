@@ -30,7 +30,7 @@ Otherwise, if no distance information can be provided is is assumed that all wor
 The definition of the nearest physical neighbor depends on information provided by hwloc which in turn depends on deployed hardware, BIOS and operation system.
 For example, the nearest neighbors could be workers which are sharing the same L1 cache of the processor or workers which are sharing the same NUMA-node.
 
-The scheduling procedure has changed as follows: If a worker has finished its last task it tries to steal a task at random from a worker of the first scheduling level instead of from a random worker from the whole system.
+The scheduling procedure has changed as follows: If a worker has finished its last task it tries to steal a task at random from a worker of the first scheduling level instead of from a random worker of the whole system.
 If no task is available at this level it increases the scheduling level and tries it again.
 
 ## Impact on Existing Code
