@@ -22,7 +22,7 @@ To minimize performance penalties on NUMA systems an actor scheduler has to be a
 
 We propose to extend the current work stealing scheduler with an awareness of the underlying hardware.
 In preparation, we pin each worker thread to a specific core and gather information about hardware topology with the Portable Hardware Locality library (hwloc) [3].
-Pinning workers prevents the operation system from reschedule the threads to other cores and gives CAF runtime full control over its worker.
+Pinning workers prevents the operation system from rescheduling the threads to other cores and gives CAF full control over its worker.
 
 In the next step, we extent the current work stealing scheduler with an multi-level approach based on the distance information of hwloc.
 We create a specific data structure for each worker thread, which contains at the first level the nearest physical neighbors and at second level the second nearest neighbors and so on.
@@ -30,7 +30,7 @@ Otherwise, if no distance information can be provided is is assumed that all wor
 The definition of the nearest physical neighbor depends on information provided by hwloc which in turn depends on deployed hardware, BIOS and operation system.
 For example, the nearest neighbors could be workers which are sharing the same L1 cache of the processor or workers which are sharing the same NUMA-node.
 
-The scheduling procedure has changed as follows: If a worker has finished its last task it tries to steal a task at random from a worker of the first scheduling level instead of from a random worker of the whole system.
+The scheduling procedure will change as follows: If a worker finishes its last task it tries to steal a task at random from a worker of the first scheduling level instead of from a random worker of the whole system.
 If no task is available at this level it increases the scheduling level and tries it again.
 
 ## Impact on Existing Code
