@@ -96,8 +96,8 @@ using config_value = variant<string, double, int64_t, bool, atom_value,
                              duration, std::vector<config_value>>;
 ```
 
-A list can easily represented a map as a list of lists with two elements each.
-Lists can also represent pairs and tuples.
+A list can easily represent a map as a list of pairs (i.e. lists with two
+elements each).
 
 The parses should accept the following syntax:
 - `key=infinite` should be parsed as `caf::infinite`
@@ -115,6 +115,18 @@ foo=@foo
 [bar2]
 foo=(("min", 5), ("max", 10))
 ```
+
+The current hack for appending with multiple assignments should be removed in
+favor of a syntactically clean solution. A natural candidate is using the `+=`
+operator:
+
+```ini
+list=(1, 2, 3)
+list+=(4, 5, 6)
+; list is now (1, 2, 3, 4, 5, 6)
+```
+
+Of course this operator could operate on any type, not just lists.
 
 ### Accessing Variables
 
