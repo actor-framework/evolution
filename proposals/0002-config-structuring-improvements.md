@@ -17,7 +17,7 @@ few basic types and additional features would greatly improve its usefulness.
 This proposal discusses improvements to CAF's configuration mechanism in
 various categories.
 
-## Missing Duration Type
+### Missing Duration Type
 
 Configurations commonly include time intervals. CAF exposes the polling
 intervals of the scheduler via its config, for example. However, durations are
