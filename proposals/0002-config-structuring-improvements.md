@@ -61,6 +61,36 @@ CAF happily adds each entry to the list, but that's a "feature" (hack, really)
 of the config reader. The CLI and INI parsers are completely unaware of lists,
 let alone maps. Maps could be easily supported by adding pairs and lists.
 
+### Error Handling and Dynamic Configuration Parameters
+
+The actor system config drops all unknown parameters, printing error messages
+for unrecognized options. This has several downsides:
+
+1. There is no generic way to access the whole configuration. For example,
+   simply iterating the configuration as-is with proper type information is not
+   possible. One can iterate the set of all options, but that
+   [isn't straightforward](https://github.com/actor-framework/actor-framework/blob/80b973/libcaf_core/src/actor_system_config.cpp#L438).
+2. Actors can only access the configuration as `actor_system_config` via
+   `self->system().config()`. This means users have no easy access to any
+   option specified in a subtype (unless using `dynamic_cast` and friends).
+3. Fully dynamic parsing of the received config is simply impossible because
+   all "unknown" options are dropped. The only supported way to read a config
+   is by subtyping `actor_system_config` and filling `custom_options_`.
+
+Having a `map<string, map<string, config_value>>` (i.e. mapping groups to the
+key/value pairs for options) in the `actor_system_config` for storing *all*
+parameters given by the user (or present by default) would pave the way to give
+users access to a "raw" representation of the whole system configuration.
+
+The one case where the configuration should drop configuration values with an
+error message is when trying to override a value with a different type. The
+following example should raise an error:
+
+```ini
+[scheduler]
+max-threads="foo" ; type mismatch: trying to override an integer with a string
+```
+
 ### Accessing Environment Variables
 
 Using environment variables for defining config parameters requires using the
@@ -157,10 +187,22 @@ C++ `include` does, i.e., simple text replacement. This is the most flexible
 solution, since it allows including key/value definitions from a file
 multiple times.
 
+### Additional State in `actor_system_config`
+
+The system config should keep a `map<string, map<string, config_value>>` for
+storing all parameters. This map is pre-filled with the hard-coded defaults of
+CAF on startup and updated from the INI and CLI parsers. This map should be
+readable by users.
+
+Further, the config class should provide functions for conveniently looking up
+a value. For example: `cfg.value("global", "foobar")` could give quick access
+to individual parameters.
+
 ## Impact on Existing Code
 
 1. The `config_value` type becomes more complex.
 2. INI and CLI parsers need to be updated and improved.
+3. The class `actor_system_config` gets more state and convenience functions
 
 ## Alternatives
 
