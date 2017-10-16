@@ -1,4 +1,4 @@
-# Config Structuring Improvements
+# Lists, Durations, Includes, and Variables in Configs
 
 * Proposal: [SE-0002](0002-config-structuring-improvements.md)
 * Author: [Dominik Charousset](https://github.com/neverlord)
@@ -160,9 +160,11 @@ Of course this operator could operate on any type, not just lists.
 
 ### Accessing Variables
 
-Adopting the `$x` notation for variable access would be most intuitive. We
-could also extend the `@`-notation to mean "variable from this config" and also
-allow `@group.key` to pick individual values.
+Adopting the `$x` notation for accessing environment variables is most
+intuitive. We could also extend the `@`-notation to mean "local variable from
+this config" and also allow `@group.key` to pick individual values from a
+group. In this way, each group and each key automatically becomes a local
+variable.
 
 ### Includes
 
