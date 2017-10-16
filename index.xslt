@@ -9,33 +9,30 @@
     <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <title>CAF RFC Status </title>
+        <title>CAF Evolution</title>
         <xsl:call-template name="css"/>
       </head>
       <body>
-        <h1>C++ Actor Framework RFCs</h1>
-
-        <p>This page lists the RFCs discussion the advancement of the C++ Actor Framework.</p>
+        <h1>List of Proposals for Changes to CAF, the C++ Actor Framework</h1>
 
         <xsl:call-template name="section">
-          <xsl:with-param name="title">Under active review</xsl:with-param>
-          <xsl:with-param name="proposals" select="proposal[@status='active']"/>
-        </xsl:call-template>
-
-        <xsl:call-template name="section">
-          <xsl:with-param name="title">Implementation in progress</xsl:with-param>
-          <xsl:with-param name="proposals" select="proposal[@status='implementing']"/>
-        </xsl:call-template>
-
-        <xsl:call-template name="section">
-          <xsl:with-param name="title">Proposals awaiting review</xsl:with-param>
+          <xsl:with-param name="title">Awaiting Review</xsl:with-param>
           <xsl:with-param name="proposals" select="proposal[@status='awaiting']"/>
         </xsl:call-template>
 
         <xsl:call-template name="section">
-          <xsl:with-param name="title">Accepted (not implemented)</xsl:with-param>
-          <xsl:with-param name="description">These proposals are accepted, but await implementation. An accepted RFC does not lead to prioritization regarding its implementations. Contributions are welcome!</xsl:with-param>
+          <xsl:with-param name="title">Under Active Review</xsl:with-param>
+          <xsl:with-param name="proposals" select="proposal[@status='active']"/>
+        </xsl:call-template>
+
+        <xsl:call-template name="section">
+          <xsl:with-param name="title">Accepted</xsl:with-param>
           <xsl:with-param name="proposals" select="proposal[@status='accepted']"/>
+        </xsl:call-template>
+
+        <xsl:call-template name="section">
+          <xsl:with-param name="title">Implementation in Progress</xsl:with-param>
+          <xsl:with-param name="proposals" select="proposal[@status='implementing']"/>
         </xsl:call-template>
 
         <xsl:call-template name="section">
@@ -82,9 +79,9 @@
   <!-- Renders a single proposal. -->
   <xsl:template match="proposal">
     <tr class="proposal">
-      <td><a class="number status-{@status}" href="https://github.com/actor-framework/rfcs/tree/master/proposals/{@filename}">SE-<xsl:value-of select="@id"/></a></td>
+      <td><a class="number status-{@status}" href="https://github.com/actor-framework/evolution/tree/master/proposals/{@filename}">CE-<xsl:value-of select="@id"/></a></td>
       <td>
-        <a class="title" href="https://github.com/actor-framework/rfcs/tree/master/proposals/{@filename}">
+        <a class="title" href="https://github.com/actor-framework/evolution/tree/master/proposals/{@filename}">
           <xsl:call-template name="format-proposal-name">
             <xsl:with-param name="name" select="@name"/>
           </xsl:call-template>

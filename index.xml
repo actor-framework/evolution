@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="index.xslt"?>
-<proposals>
-<proposal id="0001" status="implementing" name="Minimal Support for Postmortem Debugging and ShiViz Support" filename="0001-minimal-debugging-and-shiviz-support.md"/>
-
 <!--
-Recognized values for a proposal's status:
-	accepted, active, awaiting, implementing, implemented, rejected, withdrawn
+  Recognized values for a proposal's status: awaiting, active, accepted,
+  implementing, implemented, rejected, withdrawn
 
-Note: status="implemented" also requires caf-version="XX".
+  Note: status="implemented" also requires caf-version="XX".
 -->
+<proposals>
+  <proposal id="0001" status="implementing"
+    name="Minimal Support for Postmortem Debugging and ShiViz"
+    filename="0001-minimal-debugging-and-shiviz.md"/>
 </proposals>

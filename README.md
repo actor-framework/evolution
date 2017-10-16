@@ -1,32 +1,50 @@
-# Request for Comments
+# CAF Evolution
 
-This repository hosts ideas, requests and discussions about the advancement of CAF. It aims to improved the visibility and openness of the process. RFCs are reserved for changes that:
+This repository tracks proposals for changes to CAF, the C++ Actor Framework. A
+proposal can:
 
-* Affect the public API
-* Rework essential parts of the framework
-* Introduce major new features
+* Change the public API
+* Introduce new features
+* Improve existing features
 
-Small contributions, bugfixes and low-impact changes should still be posed directly via the [issue tracker](https://github.com/actor-framework/actor-framework/issues) or as a [pull request](https://github.com/actor-framework/actor-framework/pulls) of the main repository.
+Bug reports and small contributions such as bugfixes and low-impact changes
+should use CAF's main repository. Either by opening an
+[issue](https://github.com/actor-framework/actor-framework/issues) or a
+[pull request](https://github.com/actor-framework/actor-framework/pulls).
 
-## Contributing
+## Contributing a Proposal
 
-1. Copy the file `0000-template.md`. Leave the number at 0000 until it is ready to be merged into the repository and the number can be assigned with certainty.
-2. Fill in the template. The issue and PR fields are optional.
-3. Open a pull request with the proposal.
-4. Discussion takes place in the PR.
-5. When a decision is reached, the RFC is merged into the repository.
+1. Present your idea on CAF's
+   [development mailing list](https://groups.google.com/forum/#!forum/caf-devel)
+2. Once there is sufficient interest or support for your idea write down a
+   proposal, based on the `0000-template.md` file and create a
+   [pull request](https://github.com/actor-framework/evolution/pulls). Please
+   pick the next unused ID for your document (also look at open PRs!) and add
+   your proposal to the `index.xml` file with status `awaiting` in your PR.
+3. The pull request is merged once the document clearly outlines the proposed
+   solution and its impact on CAF's source code.
+4. Announce the proposal on the mailing list and wait for review decisions.
+   Note that an accepted proposal does not guarantee an implementation by the
+   core team.
 
-An accepted RFC does not lead to prioritization regarding its implementations.
+## Contributing Implementations for Proposals
 
-# Reviewing
+1. Please announce that you are working on an implementation for a proposal on
+   the development mailing list. This is to make sure no two people are working
+   on the same proposal independently, ultimately wasting time and effort.
+2. Once you have an implementation available, create a
+   [pull request](https://github.com/actor-framework/actor-framework/pulls) in
+   the main repository. Please reference the proposal you are implementing.
+3. Address any feedback on your PR until it is merged.
 
-The status of a document is on of the following, starting with awaiting when created:
+# Status of a Proposal
 
-* **accepted:** Accepted RFC that has not been implemented.
-* **active:** Currently under review.
+The status of a document is on of the following, starting with awaiting when
+created:
+
 * **awaiting:** Awaiting review.
+* **active:** Currently under review.
+* **accepted:** Accepted RFC that has not been implemented.
 * **implemented:** Accepted and implemented in CAF.
 * **rejected:** Rejected by the review process.
 * **withdrawn:** Withdrawn by the proposer.
-
-*The review and acceptance process still require specification.*

@@ -1,6 +1,6 @@
 # Name for the proposal
 
-* Proposal: [SE-0000](0000-template.md)
+* Proposal: [CE-0000](0000-template.md)
 * Author: [Firstname Lastname](https://github.com/username)
 
 ## Introduction
