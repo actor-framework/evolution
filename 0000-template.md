@@ -2,7 +2,6 @@
 
 * Proposal: [SE-0000](0000-template.md)
 * Author: [Firstname Lastname](https://github.com/username)
-* Status: Awaiting
 
 ## Introduction
 

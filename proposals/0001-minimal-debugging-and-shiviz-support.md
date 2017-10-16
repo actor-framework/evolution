@@ -2,7 +2,6 @@
 
 * Proposal: [SE-0001](0001-minimal-debugging-and-shiviz-support.md)
 * Author: [Dominik Charousset](https://github.com/neverlord)
-* Status: Accepted
 
 ## Introduction
 
