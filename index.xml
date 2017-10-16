@@ -10,7 +10,7 @@
   <proposal id="0001" status="implementing"
     name="Minimal Support for Postmortem Debugging and ShiViz"
     filename="0001-minimal-debugging-and-shiviz.md"/>
-  <proposal id="0002" status="implementing"
+  <proposal id="0002" status="accepted"
     name="Lists, Durations, Includes and Variables in Configs.md"
     filename="0002-lists-durations-includes-and-variables-in-configs.md"/>
 </proposals>
