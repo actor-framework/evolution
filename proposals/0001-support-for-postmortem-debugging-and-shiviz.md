@@ -1,6 +1,6 @@
 # Support for Postmortem Debugging and ShiViz
 
-* Proposal: [CE-0001](0001-support-for-postmortem-debugging-and-shiviz.md)
+* Proposal: [CE-0001](http://actor-framework.github.io/evolution/#0001)
 * Author: [Dominik Charousset](https://github.com/neverlord)
 
 ## Introduction

@@ -1,8 +1,7 @@
 # Lists, Durations, Includes, and Variables in Configs
 
-* Proposal: [CE-0002](0002-lists-durations-includes-and-variables-in-configs.md)
+* Proposal: [CE-0002](http://actor-framework.github.io/evolution/#0002)
 * Author: [Dominik Charousset](https://github.com/neverlord)
-* Status: Awaiting 
 
 ## Introduction
 

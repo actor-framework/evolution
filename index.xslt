@@ -79,7 +79,7 @@
   <!-- Renders a single proposal. -->
   <xsl:template match="proposal">
     <tr class="proposal">
-      <td><a class="number status-{@status}" href="https://github.com/actor-framework/evolution/tree/master/proposals/{@filename}">CE-<xsl:value-of select="@id"/></a></td>
+      <td><a class="number status-{@status}" href="#{@id}">CE-<xsl:value-of select="@id"/></a></td>
       <td>
         <a class="title" href="https://github.com/actor-framework/evolution/tree/master/proposals/{@filename}">
           <xsl:call-template name="format-proposal-name">
