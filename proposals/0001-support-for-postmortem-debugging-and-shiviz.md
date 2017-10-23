@@ -1,6 +1,6 @@
-# Minimal Support for Postmortem Debugging and ShiViz
+# Support for Postmortem Debugging and ShiViz
 
-* Proposal: [CE-0001](0001-minimal-debugging-and-shiviz-support.md)
+* Proposal: [CE-0001](0001-support-for-postmortem-debugging-and-shiviz.md)
 * Author: [Dominik Charousset](https://github.com/neverlord)
 
 ## Introduction

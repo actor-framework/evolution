@@ -1,6 +1,6 @@
 # Lists, Durations, Includes, and Variables in Configs
 
-* Proposal: [SE-0002](0002-config-structuring-improvements.md)
+* Proposal: [CE-0002](0002-lists-durations-includes-and-variables-in-configs.md)
 * Author: [Dominik Charousset](https://github.com/neverlord)
 * Status: Awaiting 
 
