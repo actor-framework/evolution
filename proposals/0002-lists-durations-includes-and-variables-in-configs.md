@@ -1,4 +1,4 @@
-# Lists, Durations, Includes, and Variables in Configs
+# Lists, Durations, and Dictionaries in Configs
 
 * Proposal: [CE-0002](http://actor-framework.github.io/evolution/#0002)
 * Author: [Dominik Charousset](https://github.com/neverlord)
@@ -60,6 +60,11 @@ CAF happily adds each entry to the list, but that's a "feature" (hack, really)
 of the config reader. The CLI and INI parsers are completely unaware of lists,
 let alone maps. Maps could be easily supported by adding pairs and lists.
 
+Finally, reading a dictionary (i.e., `std::map::<std::string, config_value>`)
+from the config is not supported at all. While the configuration itself is
+organized in this way, there is no abstraction in place for allowing users
+to re-use this structure.
+
 ### Error Handling and Dynamic Configuration Parameters
 
 The actor system config drops all unknown parameters, printing error messages
@@ -90,25 +95,10 @@ following example should raise an error:
 max-threads="foo" ; type mismatch: trying to override an integer with a string
 ```
 
-### Accessing Environment Variables
-
-Using environment variables for defining config parameters requires using the
-CLI parameters. Allowing the INI parser to expand environment variables closes
-the gap in functionality and makes distributing CAF applications easier.
-
-### Convenience Features
-
-Splitting complex configurations into multiple files is a common use case but
-unsupported. 
-
-Finally, each group in the INI file is essentially a list of key/value pairs,
-i.e., a map. Allowing users to reference other groups as key/value lists could
-make composing complex configurations much easier.
-
 ## Proposed Solution
 
-The parsers should receive first-class support for lists, durations,
-environment variables, and include directives.
+The parsers should receive first-class support for lists, durations, and
+dictionaries.
 
 ### Data Structures and Missing Duration Type
 
@@ -118,92 +108,42 @@ This is the current definition of the `config_value` building block:
 using config_value = variant<string, double, int64_t, bool, atom_value>;
 ```
 
-The variant should include `caf::duration` and support lists:
+The variant should include `caf::timespan`, lists, and dictionaries:
 
 ```cpp
 using config_value = variant<string, double, int64_t, bool, atom_value,
-                             duration, std::vector<config_value>>;
+                             timespan, vector<config_value>,
+                             map<string, config_value>>;
 ```
 
-A list can easily represent a map as a list of pairs (i.e. lists with two
-elements each).
+(Note: the above is pseudo-code and not legal C++.)
 
 The parses should accept the following syntax:
-- `key=infinite` should be parsed as `caf::infinite`
-- `key=(x0, x1, ..., xn)` should be parsed as a list
-- `key=(("a", 1), ("b", 2))` is a list of lists, allowing users to model maps
-- `key=@other` assigns a config group converted into a list of key/value pairs
-  to a single key; here's a motivating example with two identically defined
-  parameters `bar1.foo` and `bar2.foo`:
-```ini
-[foo]
-min=5
-max=10
-[bar1]
-foo=@foo
-[bar2]
-foo=(("min", 5), ("max", 10))
-```
-
-The current hack for appending with multiple assignments should be removed in
-favor of a syntactically clean solution. A natural candidate is using the `+=`
-operator:
-
-```ini
-list=(1, 2, 3)
-list+=(4, 5, 6)
-; list is now (1, 2, 3, 4, 5, 6)
-```
-
-Of course this operator could operate on any type, not just lists.
-
-### Accessing Variables
-
-Adopting the `$x` notation for accessing environment variables is most
-intuitive. We could also extend the `@`-notation to mean "local variable from
-this config" and also allow `@group.key` to pick individual values from a
-group. In this way, each group and each key automatically becomes a local
-variable.
-
-### Includes
-
-Currently, each line is either empty or contains a `[group]` or `key=value`
-definition. Includes would add direct commands to the parser. Using an operator
-for this seems natural and `!` a good prefix. Introducing the prefix allows us
-to extend this functionality in the future, for example "!print @my-group"
-could make it easier to debug complex configurations.
-
-The INI parser could restrict include files to be declared at the top of the
-file or simply read any file content in-place. Consider this example:
-
-```ini
-!read /path/to/file1
-
-[somegroup]
-!read /path/to/file2
-```
-
-If `!read file` is allowed everywhere than it would operate in the same way a
-C++ `include` does, i.e., simple text replacement. This is the most flexible
-solution, since it allows including key/value definitions from a file
-multiple times.
+- `key=true` is a boolean
+- `key=1` is an integer
+- `key=1.0` is an floating point number
+- `key=1ms` is an timespan
+- `key='foo'` is an atom
+- `key="foo"` is a string
+- `key=[0, 1, ...]` is as a list
+- `key={a=1, b=2, ...}` is a dictionary
 
 ### Additional State in `actor_system_config`
 
-The system config should keep a `map<string, map<string, config_value>>` for
-storing all parameters. This map is pre-filled with the hard-coded defaults of
-CAF on startup and updated from the INI and CLI parsers. This map should be
-readable by users.
-
-Further, the config class should provide functions for conveniently looking up
-a value. For example: `cfg.value("global", "foobar")` could give quick access
-to individual parameters.
+The system config should behave like a `map<string, map<string, config_value>>`
+and store all user-defined values. Further, the config class should provide
+functions for conveniently looking up values. In particular, a `get_or`
+function can greatly improve user experience. For example,
+`auto has_udp = get_or(cfg, "middleman.enable-udp", false)` either returns a
+user-defined value for the key `middleman.enable-udp` or `false` if 1) the user
+did not provide a value or 2) the config contains a non-boolean value for the
+key.
 
 ## Impact on Existing Code
 
 1. The `config_value` type becomes more complex.
 2. INI and CLI parsers need to be updated and improved.
-3. The class `actor_system_config` gets more state and convenience functions
+3. The class `actor_system_config` gets more state and convenience functions.
 
 ## Alternatives
 
@@ -229,8 +169,11 @@ behavior. The corresponding syntax using our proposed solution reads:
 
 ```ini
 [somegroup]
-somelist = ("a", "b", "c", "d")
-urls = (("svn", "http://svn.php.net"), ("git","http://git.php.net"))
+somelist = ["a", "b", "c", "d"]
+urls = {
+  svn = "http://svn.php.net",
+  git = "http://git.php.net",
+}
 ```
 
-The proposed solution is less redundant.
+The proposed solution is less redundant and more declarative.
