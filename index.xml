@@ -11,6 +11,6 @@
     name="Support for Postmortem Debugging and ShiViz"
     filename="0001-support-for-postmortem-debugging-and-shiviz.md"/>
   <proposal id="0002" status="implemented"
-    name="Lists, Durations, Includes, and Variables in Configs"
+    name="Lists, Durations, and Dictionaries in Configs"
     filename="0002-lists-durations-and-dictionaries-in-configs.md"/>
 </proposals>
