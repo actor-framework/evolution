@@ -19,7 +19,7 @@ This proposal introduces a new design for the network layer. Reworked event hand
 
 ### Multiplexer
 
-The major new feature is multithreading. Since we have bottlenecks elsewhere, I'd put as much of the multi-threading itself off until the basic concept works. This cannot be ignored completely as it has implications for the overall design. Foremost, threadsafety has to be kept in mind when designing the interactions between proxies, event handlers, and the multiplexing thread. The `default_multiplexer` hosts a lot of socket-specific functionality at the moment. Part of this will be useful in for this desgin and should be clean up accordingly.
+The major new feature is multithreading. Since we have bottlenecks elsewhere, I'd put as much of the multi-threading itself off until the basic concept works. This cannot be ignored completely as it has implications for the overall design. Foremost, threadsafety has to be kept in mind when designing the interactions between proxies, event handlers, and the multiplexing thread. The `default_multiplexer` hosts a lot of socket-specific functionality at the moment. Part of this will be useful in for this design and should be clean up accordingly.
 
 Some links I found about multithreading:
 
@@ -37,7 +37,7 @@ The second queue handles timeout messages. It is fed by the `thread_safe_actor_c
 Event handlers have a `reading` state to track if their socket is registered for reading at the multiplexer. While one of its queues has data the `event_handler` should be registered for reading.
 
 
-```
+```cpp
 using buffer = std::vector<char>;
 using network_queue = std::deque<buffer, caf::mailbox_element>;
 using timeout_queue = std::deque<caf::atom, uint64_t>;
@@ -67,7 +67,7 @@ Protocols that are multiplexed over a single socket such as UDP or QUIC require 
 
 * How does a timeout wake up the event handler? There is no socket event here that would do something like this ... It might be enough to simply register the event handler for write events when something is enqueued to any queue.
 * I don't want to introduce more queues, but let's consider sending an ack after a message was received. Where is that ACK message placed? At the back of `data`?
-* Do we want all event handlers to have the `<buffer,mailbox_element>` pair? This is very CAF message specific and might not be desireable for a broker-like feature we want to introduce later. Maybe this could be a template parameter?
+* Do we want all event handlers to have the `<buffer,mailbox_element>` pair? This is very CAF message specific and might not be desirable for a broker-like feature we want to introduce later. Maybe this could be a template parameter?
 
 
 **Alternative**
@@ -76,7 +76,7 @@ Data in the `data` queue is already the complete message. Before data is passed 
 
 #### Protocol
 
-```
+```cpp
 struct protocol {
   // Called directly before sending data. Can write haders, set timeouts, ...
   virtual void prepare(std::vector<char> payload, caf::mailbox_element elem) = 0;
@@ -90,7 +90,7 @@ struct protocol {
 
 #### Transport
 
-```
+```cpp
 struct transport {
   // Read data from the network.
   virtual io::network::rw_state caf::error read_some(...) = 0;
@@ -115,10 +115,10 @@ struct transport {
 
 ### Proxy
 
-Benchmarks showed that the BASP broker spends a lot of time with message seriallization. To remove this bottleneck serialization will be hanlded by the proxy before handing the message off to the network layer.
+Benchmarks showed that the BASP broker spends a lot of time with message serialization. To remove this bottleneck serialization will be handled by the proxy before handing the message off to the network layer.
 
-```
-struct serializing_proxy : public actor_proxy {
+```cpp
+struct serializing_proxy : public actor_proxy
   network_queue* queue;
 
   void enqueue(mailbox_element_ptr what, execution_unit* host) override {
@@ -132,7 +132,7 @@ struct serializing_proxy : public actor_proxy {
 
 *Future:*
 
-* If serialization remains as to be the limiting factor for network communication we should examine the possibility to slim down the serialization effort or look into a parallelization similar to the ongoin/recent [deserialization rework](https://github.com/actor-framework/actor-framework/tree/topic/basp-worker).
+* If serialization remains as to be the limiting factor for network communication we should examine the possibility to slim down the serialization effort or look into a parallelization similar to the ongoing/recent [deserialization rework](https://github.com/actor-framework/actor-framework/tree/topic/basp-worker).
 
 
 ### Socker-per-connection protocols
