@@ -17,6 +17,10 @@ The existing network layer has a few problems:
 
 This proposal introduces a new design for the network layer. Reworked event handlers can be configured with a transport policy for communication and a protocol policy to use on top of the protocol. For the standard actor-to-actor communication this could be TCP as a transport with BASP as a protocol on top. Serialization is no longer handled by a central entity but distributed among actors that want to send data over the network.
 
+## Proposed Solution
+
+A detailed explanation of the proposal.
+
 ### Multiplexer
 
 The major new feature is multithreading. Since we have bottlenecks elsewhere, I'd put as much of the multi-threading itself off until the basic concept works. This cannot be ignored completely as it has implications for the overall design. Foremost, threadsafety has to be kept in mind when designing the interactions between proxies, event handlers, and the multiplexing thread. The `default_multiplexer` hosts a lot of socket-specific functionality at the moment. Part of this will be useful in for this design and should be clean up accordingly.
@@ -144,10 +148,6 @@ scribe / acceptor separation
 
 client / server separation
 
-
-## Proposed Solution
-
-A detailed explanation of the proposal.
 
 ## Impact on Existing Code
 
