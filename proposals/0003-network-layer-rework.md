@@ -5,7 +5,7 @@
 
 ## Introduction
 
-Distributed systems are a key environment of the actor frameworks. From the beginning CAF had a strong coupling to TCP. As a central entity the BASP broker is a bottle neck for communication and hinders scalability. While support for UDP was added in recent years, extending the network layer to handle new protocols requires adjustemnts throughout the stack.
+Distributed systems are a key environment of the actor frameworks. From the beginning CAF had a strong coupling to TCP. As a central entity the BASP broker is a bottle neck for communication and hinders scalability. While support for UDP was added in recent years, extending the network layer to handle new protocols requires adjustments throughout the stack.
 
 ## Motivation
 
@@ -19,7 +19,7 @@ This proposal introduces a new design for the network layer. Reworked event hand
 
 ### Multiplexer
 
-Not too many changes here. The most important part is getting this to run with multiple threads. Since we have bottlenecks elsewhere, I'd put bigger changes off until the rest works. The `default_multiplexer` hosts a lot of socket-specific functionality at the moment. Part of this will be useful in for this desgin and should be clean up accordingly.
+The major new feature is multithreading. Since we have bottlenecks elsewhere, I'd put as much of the multi-threading itself off until the basic concept works. This cannot be ignored completely as it has implications for the overall design. Foremost, threadsafety has to be kept in mind when designing the interactions between proxies, event handlers, and the multiplexing thread. The `default_multiplexer` hosts a lot of socket-specific functionality at the moment. Part of this will be useful in for this desgin and should be clean up accordingly.
 
 Some links I found about multithreading:
 
@@ -28,11 +28,18 @@ Some links I found about multithreading:
 
 ### Event Handler
 
-This class existed before. It runs in the multiplexer thread and is called when a network event happens.
+This class existed before. It runs in the multiplexer thread and is called for network events on its socket. The new network handler has a `protocol` member that represents the protocol spoken over the transport. This could be BASP between CAF actor systems or ordering when UDP is used. The transport protocol for its communication is determined by the `transport` member, e.g., TCP, UDP, QUIC, etc.
+
+Data to be written to the socket is stored in the `data` queue. Each element stores the buffer with the serialized payload and the mailbox element handed to the proxy. Data in the mailbox element might be important for the protocol. Thinking of BASP, the sender and receiver of the message are important to write the BASP header. This information is stored in the `mailbox_element`. This queue is fed from outside the multiplexer and requires a thread safe enqueue / dequeue -- note that only the multiplexer itself reads from the queue which allows for some optimization.
+
+The second queue handles timeout messages. It is fed by the `thread_safe_actor_clock` which is used to set timeouts. These have priority over other messages. Timeouts are identified by an atom and an id. The event handler forwards atoms to the protocol which can use them for functionality such as retransmits.
+
+Event handlers have a `reading` state to track if their socket is registered for reading at the multiplexer. While one of its queues has data the `event_handler` should be registered for reading.
 
 
 ```
-using network_queue = std::deque<std::vector<char>,caf::mailbox_element>;
+using buffer = std::vector<char>;
+using network_queue = std::deque<buffer, caf::mailbox_element>;
 using timeout_queue = std::deque<caf::atom, uint64_t>;
 
 struct network_handler : public event_handler {
@@ -41,7 +48,10 @@ struct network_handler : public event_handler {
   // Has priority, allows us to use the thread_safe_actor_clock for timeout handling.
   timeout_queue tos;
 
-  /// Called by the protocol to create a queue for a new endpoint.
+  // Add a buffer to the data queue. Is threadsafe.
+  void enqueue(buffer, caf::mailbox_element);
+
+  // Called by the protocol to create a queue for a new endpoint.
   caf::expected<network_queue> new_endpoint(...);
 
   protocol proto;
@@ -49,10 +59,20 @@ struct network_handler : public event_handler {
 };
 ```
 
+Adding data to the queues is potentially a costly operation as it requires memory allocations. The queue itself is not the problem, but the buffers it stores might be. There are several approaches to avoid this. Reusing buffers is one. Writing a custom allocator that uses a memory pool is another one. There is also tmalloc. This needs some thought.
+
+Protocols that are multiplexed over a single socket such as UDP or QUIC require more complex queue handling. An idea is to introduce one queue per endpoint. This requires a mechanism to dynamically manage queues in the event handler, including a mechanism to know which queues have data.
+
 *Challenges:*
 
-* How does a timeout wake up the event handler?
+* How does a timeout wake up the event handler? There is no socket event here that would do something like this ... It might be enough to simply register the event handler for write events when something is enqueued to any queue.
 * I don't want to introduce more queues, but let's consider sending an ack after a message was received. Where is that ACK message placed? At the back of `data`?
+* Do we want all event handlers to have the `<buffer,mailbox_element>` pair? This is very CAF message specific and might not be desireable for a broker-like feature we want to introduce later. Maybe this could be a template parameter?
+
+
+**Alternative**
+
+Data in the `data` queue is already the complete message. Before data is passed to the event handler it is already processed by the protocol which just gets a callback when a payload is send. Could work with something like an ID. This would make the interface a bit more generic and less specific to actor messages.
 
 #### Protocol
 
