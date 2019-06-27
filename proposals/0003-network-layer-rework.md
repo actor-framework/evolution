@@ -74,43 +74,95 @@ Protocols that are multiplexed over a single socket such as UDP or QUIC require 
 * Do we want all event handlers to have the `<buffer,mailbox_element>` pair? This is very CAF message specific and might not be desirable for a broker-like feature we want to introduce later. Maybe this could be a template parameter?
 
 
-**Alternative**
+*Alternatives:*
 
 Data in the `data` queue is already the complete message. Before data is passed to the event handler it is already processed by the protocol which just gets a callback when a payload is send. Could work with something like an ID. This would make the interface a bit more generic and less specific to actor messages.
 
+#### Transport
+
+The transport policy abstracts send, receiving, and establishing connections (or communication) for a specific transport protocol. While the general functionality is smilar for many protocols, I'm not sure we can have a defined interface. A key difference between protocols that have one socket per connection (multiplexed by the kernel such as TCP) and protocols that require manual socket-multiplexing by the user (such as UDP or QUIC) is the requirement to have an endpoint defined in the read and write calls. For UDP this is the address of the remote endpoint (host + port) but could be anything. The general interface looks something like this:
+
+```cpp
+struct transport {
+  // Read data from the network.
+  virtual io::network::rw_state read_some(size_t& result,
+                                          io::network::native_socket fd,
+                                          void* buf, size_t buf_len) = 0;
+
+  // Write data to the network.
+  virtual io::network::rw_state  write_some(size_t& result,
+                                            io::network::native_socket fd,
+                                            const void* buf, size_t len) = 0;
+
+  // Open a local endpoint to accept connections.
+  virtual void <io::network::native_socket, uint16_t>
+  open(uint16_t port, const char* addr, bool reuse = false,
+       optional<io::network::protocol::network> = none) = 0;
+
+  // Establish communication with a remote endpoint.
+  virtual expected<io::network::native_socket>
+  connect(const std::string&, uint16_t,
+          optional<io::network::protocol::network> = none) = 0;
+
+  // Useful for protocols that parse data from a stream.
+  virtual void configure_read(io::receive_policy::config);
+};
+```
+
+Ideas to address the additional parameter for socket-multiplexing protocols:
+
+1) Add a template argument to choose the type of the identifier. UDP could set this to `ip_endpoint` and derive from transport. Not sure if `connect` would need to return such an identifier as well. I could imagine something like a connect for QUIC where the connection is established and returns the ID that is than used to address that endpoint.
+
+```cpp
+template <class Endpoint>
+struct socket_multiplexing_transport {
+  // Can be used by event handlers or protocols to store the identifiers.
+  using endpoint_type = Endpoint;
+
+  // Read data from the network.
+  virtual io::network::rw_state
+  read_some(size_t& result, io::network::native_socket fd,
+            void* buf, size_t buf_len, endpoint_type& ep) = 0;
+
+  // Write data to the network.
+  virtual io::network::rw_state
+  write_some(size_t& result, io::network::native_socket fd,
+             const void* buf, size_t buf_len,
+             const endpoint_type& ep) = 0;
+
+  // Some other functions.
+};
+
+struct ip_endpoint {
+  caf::ipv4_address host;
+  uint16_t port;
+};
+
+struct udp : socket_multiplexing_transport<ip_endpoint> {
+  // Implementation.
+};
+
+```
+
+2) Have an optional argument for the identifier. This might lead to problems in how to handle the identifier for protocols that don't need it. Writing a generic protocol will still not be easy and two different implementations might be required. This would give us a single parent with one interface.
+
 #### Protocol
+
+A protocol policy represents an application layer protocol or add augmentations to the underlying transport protocol.
 
 ```cpp
 struct protocol {
   // Called directly before sending data. Can write haders, set timeouts, ...
   virtual void prepare(std::vector<char> payload, caf::mailbox_element elem) = 0;
+
   // Called after data is received, can do things ...
   virtual void process()
+
   // Timeouts happend.
   virutal void handle_timeout(caf::atom, uint64_t);
 };
 ```
 
-
-#### Transport
-
-```cpp
-struct transport {
-  // Read data from the network.
-  virtual io::network::rw_state caf::error read_some(...) = 0;
-
-  // Write data to the network.
-  virtual io::network::rw_state write_some(...) = 0;
-
-  virtual expected<io::network::native_socket>
-  connect(const std::string&, uint16_t,
-          optional<io::network::protocol::network> = none) = 0;
-
-  virtual void shutdown() = 0;
-
-  virtual void configure_read(io::receive_policy::config);
-};
-```
 
 *Challenges:*
 
