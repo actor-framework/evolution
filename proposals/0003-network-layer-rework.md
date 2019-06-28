@@ -65,13 +65,19 @@ struct network_handler : public event_handler {
 
 Adding data to the queues is potentially a costly operation as it requires memory allocations. The queue itself is not the problem, but the buffers it stores might be. There are several approaches to avoid this. Reusing buffers is one. Writing a custom allocator that uses a memory pool is another one. There is also tmalloc. This needs some thought.
 
-Protocols that are multiplexed over a single socket such as UDP or QUIC require more complex queue handling. An idea is to introduce one queue per endpoint. This requires a mechanism to dynamically manage queues in the event handler, including a mechanism to know which queues have data.
-
 *Queues:*
 
-* one queue per endpoint
-* a single queue with a filed for the transport-specific id
-* a singel queue and the protocol keeps a mapping from the node id in the mailbox element to the connection id
+Protocols that are multiplexed over a single socket such as UDP or QUIC require a mapping of each packet to the endpoint it addresses. Let's call this info id. For UDP this would be host + port.
+
+* Add a one queue per endpoint, queue knows its id.
+  * Pro: Transport-independent queues.
+  * Con: Overhead for queue management.
+* A single queue with a filed for the transport-specific id. Each proxy knows the id for its endpoint and appends it with its payload.
+  * Pro: Only one queue. No lookup since each packet knows its id.
+  * Con: Queue type depends on the transport policy.
+* A single queue, but the protocol keeps a mapping from the node id (available in the mailbox element) to the connection id.
+  * Pro: Single queue with transport-independent type.
+  * Con: Protocol has to do a hash lookup (which is often cheap).
 
 *Challenges:*
 
@@ -154,7 +160,9 @@ struct udp : socket_multiplexing_transport<ip_endpoint> {
 
 #### Protocol
 
-A protocol policy represents an application layer protocol or add augmentations to the underlying transport protocol.
+A protocol policy represents an application layer protocol or add augmentations to the underlying transport protocol. It defines how incoming data is processed and how a packet is augmented before it is sent. This might include adding new headers or setting timeouts. Protocols we should keep in mind during the design are BASP, ordering, reliability, and slicing.
+
+The general idea is that protocols can be stacked and reused over different transport protocols. Having potentially different APIs for transport with kernel-multiplexed and socket-multiplexed protocols. This might be solved by having two protocol types that can handle the respective transport APIs and instantiate the same stack for both. Not sure if this is possible -- might depend on the choice we make for queue handling above.
 
 ```cpp
 struct protocol {
