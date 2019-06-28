@@ -67,6 +67,12 @@ Adding data to the queues is potentially a costly operation as it requires memor
 
 Protocols that are multiplexed over a single socket such as UDP or QUIC require more complex queue handling. An idea is to introduce one queue per endpoint. This requires a mechanism to dynamically manage queues in the event handler, including a mechanism to know which queues have data.
 
+*Queues:*
+
+* one queue per endpoint
+* a single queue with a filed for the transport-specific id
+* a singel queue and the protocol keeps a mapping from the node id in the mailbox element to the connection id
+
 *Challenges:*
 
 * How does a timeout wake up the event handler? There is no socket event here that would do something like this ... It might be enough to simply register the event handler for write events when something is enqueued to any queue.
