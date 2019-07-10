@@ -3,32 +3,39 @@
 * Proposal: [CE-0003](0003-netowrk-layer-rework.md)
 * Author: [Joseph Noir](https://github.com/josephnoir)
 
+
 ## Introduction
 
 Distributed systems are a key environment of the actor frameworks. From the beginning CAF had a strong coupling to TCP. As a central entity the BASP broker is a bottle neck for communication and hinders scalability. While support for UDP was added in recent years, extending the network layer to handle new protocols requires adjustments throughout the stack.
+
 
 ## Motivation
 
 The existing network layer has a few problems:
 
-* It cannot use the existing bandwidth.
+* It cannot fully use the bandwidth of standard network interfaces.
 * Extending the network layer with new protocols or functionality requires changes throughout the whole stack.
-* No support for multi-threading.
+* No multi-threading support.
 
 This proposal introduces a new design for the network layer. Reworked event handlers can be configured with a transport policy for communication and a protocol policy to use on top of the protocol. For the standard actor-to-actor communication this could be TCP as a transport with BASP as a protocol on top. Serialization is no longer handled by a central entity but distributed among actors that want to send data over the network.
+
 
 ## Proposed Solution
 
 A detailed explanation of the proposal.
 
+
 ### Multiplexer
 
-The major new feature is multithreading. Since we have bottlenecks elsewhere, I'd put as much of the multi-threading itself off until the basic concept works. This cannot be ignored completely as it has implications for the overall design. Foremost, threadsafety has to be kept in mind when designing the interactions between proxies, event handlers, and the multiplexing thread. The `default_multiplexer` hosts a lot of socket-specific functionality at the moment. Part of this will be useful in for this design and should be clean up accordingly.
+The major new feature is multi-threading. Since we have bottlenecks elsewhere, I'd put as much of the multi-threading itself off until the basic concept works. Still, this aspect cannot be ignored as it has implications for the overall design. Foremost, thread safety has to be kept in mind when designing the interactions between proxies, event handlers, and the multiplexing thread.
 
-Some links I found about multithreading:
+Some links on multi-threaded multiplexing for later:
 
 * [epoll](https://stackoverflow.com/questions/14584833/multithreaded-epoll), [more epoll](https://stackoverflow.com/questions/7058737/is-epoll-thread-safe), [hmmm](https://www.reddit.com/r/C_Programming/comments/7bnscf/multithreaded_epoll_server_design/)
 * [kqueue](https://lists.freebsd.org/pipermail/freebsd-hackers/2004-July/007655.html), [more kqueue](https://stackoverflow.com/questions/25228938/tcp-server-workers-with-kqueue)
+
+The `default_multiplexer` hosts a lot of socket-specific functionality at the moment. Part of this will be useful in for this design and should be cleaned up accordingly.
+
 
 ### Event Handler
 
@@ -40,19 +47,20 @@ The second queue handles timeout messages. It is fed by the `thread_safe_actor_c
 
 Event handlers have a `reading` state to track if their socket is registered for reading at the multiplexer. While one of its queues has data the `event_handler` should be registered for reading.
 
-
 ```cpp
 using buffer = std::vector<char>;
 using network_queue = std::deque<buffer, caf::mailbox_element>;
 using timeout_queue = std::deque<caf::atom, uint64_t>;
 
 struct network_handler : public event_handler {
-  // Should handle mutliple queues for socket-multiplexing protocols, see below.
+  // Should handle multiple queues for socket-multiplexing protocols,
+  // see below.
   network_queue data;
-  // Has priority, allows us to use the thread_safe_actor_clock for timeout handling.
+  // Has priority, allows us to use the thread_safe_actor_clock for timeout
+  // handling.
   timeout_queue tos;
 
-  // Add a buffer to the data queue. Is threadsafe.
+  // Add a buffer to the data queue. Is thread safe.
   void enqueue(buffer, caf::mailbox_element);
 
   // Called by the protocol to create a queue for a new endpoint.
@@ -63,7 +71,7 @@ struct network_handler : public event_handler {
 };
 ```
 
-Adding data to the queues is potentially a costly operation as it requires memory allocations. The queue itself is not the problem, but the buffers it stores might be. There are several approaches to avoid this. Reusing buffers is one. Writing a custom allocator that uses a memory pool is another one. There is also tmalloc. This needs some thought.
+Adding data to the queues is potentially a costly operation as it requires memory allocations. The queue itself is not the problem, but the buffers it stores might be. There are several approaches to avoid this. Reusing buffers is one. Writing a custom allocator that uses a memory pool is another one. There is also tcmalloc. This needs some thought.
 
 *Queues:*
 
@@ -83,12 +91,13 @@ Protocols that are multiplexed over a single socket such as UDP or QUIC require 
 
 * How does a timeout wake up the event handler? There is no socket event here that would do something like this ... It might be enough to simply register the event handler for write events when something is enqueued to any queue.
 * I don't want to introduce more queues, but let's consider sending an ack after a message was received. Where is that ACK message placed? At the back of `data`?
-* Do we want all event handlers to have the `<buffer,mailbox_element>` pair? This is very CAF message specific and might not be desirable for a broker-like feature we want to introduce later. Maybe this could be a template parameter?
+* Do we want all event handlers to have the `<buffer, mailbox_element>` pair? This is very CAF message specific and might not be desirable for a broker-like feature we want to introduce later. Maybe this could be a template parameter?
 
 
 *Alternatives:*
 
 Data in the `data` queue is already the complete message. Before data is passed to the event handler it is already processed by the protocol which just gets a callback when a payload is send. Could work with something like an ID. This would make the interface a bit more generic and less specific to actor messages.
+
 
 #### Transport
 
@@ -142,7 +151,7 @@ struct socket_multiplexing_transport {
              const void* buf, size_t buf_len,
              const endpoint_type& ep) = 0;
 
-  // Some other functions.
+  // Other functions.
 };
 
 struct ip_endpoint {
@@ -158,6 +167,7 @@ struct udp : socket_multiplexing_transport<ip_endpoint> {
 
 2) Have an optional argument for the identifier. This might lead to problems in how to handle the identifier for protocols that don't need it. Writing a generic protocol will still not be easy and two different implementations might be required. This would give us a single parent with one interface.
 
+
 #### Protocol
 
 A protocol policy represents an application layer protocol or add augmentations to the underlying transport protocol. It defines how incoming data is processed and how a packet is augmented before it is sent. This might include adding new headers or setting timeouts. Protocols we should keep in mind during the design are BASP, ordering, reliability, and slicing.
@@ -166,22 +176,23 @@ The general idea is that protocols can be stacked and reused over different tran
 
 ```cpp
 struct protocol {
-  // Called directly before sending data. Can write haders, set timeouts, ...
-  virtual void prepare(std::vector<char> payload, caf::mailbox_element elem) = 0;
+  // Called directly before sending data. Can write headers, set timeouts, ...
+  virtual void prepare(std::vector<char> payload,
+                       caf::mailbox_element elem) = 0;
 
   // Called after data is received, can do things ...
   virtual void process()
 
-  // Timeouts happend.
-  virutal void handle_timeout(caf::atom, uint64_t);
+  // Timeouts happened.
+  virtual void handle_timeout(caf::atom, uint64_t);
 };
 ```
-
 
 *Challenges:*
 
 * Socket-multiplexing protocols need some identifier or address as part of the read and write calls. For UDP this would be the endpoint information. Maybe this is a template class with an `Endpoint` type that is passed in and if the type if `None` with enable functions only expect the data?
 * How is `configure_read` called? I think the read configuration depends on the `protocol`.
+
 
 ### Proxy
 
@@ -205,12 +216,22 @@ struct serializing_proxy : public actor_proxy
 * If serialization remains as to be the limiting factor for network communication we should examine the possibility to slim down the serialization effort or look into a parallelization similar to the ongoing/recent [deserialization rework](https://github.com/actor-framework/actor-framework/tree/topic/basp-worker).
 
 
-### Socker-per-connection protocols
+### Kernel-multiplexed Protocols
 
-scribe / acceptor separation
+These protocols can continue to work as before. A doorman listens on a socket to accept new connections. For each new connection it creates a scribe to handle communication. Each scribe is responsible for a single connection. Since scribes share no state with acceptors they can be created independently of each other. This way a scribe can be crated to connect to remote not as a client.
+
+Since each socket is either listening or connected to an endpoint there is no additional information necessary to send or receive data. The `send` and `recv` calls are enough to handle this.
+
+With the components described above, an implementation could work as follows: One `event_handler` acts as the acceptor. It only reacts to read events to accept new connections. The resulting socket is used to create a scribe (event handler + protocol + transport). I'm not sure which component should be responsible for this. Options:
+
+* Each read event results in the creation of a new event handler that holds a new instance of the transport protocol policy and protocol policy. After the protocol policy is initialized it is has the option to react. (It could for example start a handshake.)
+* The new socket is handed to the protocol policy which can choose how to react. BASP might create a new proxy with an event handler and the two policies. This could allows us to handle brokers as a policy that creates actors to handle the raw data or whatever is offered by other policies.
+* ...
+
+The client side instantiates the same scribe (event handler + transport + protocol).
 
 
-### Single-socket-multiplexed protocols
+### User-space-multiplexed Protocols
 
 client / server separation
 
@@ -218,6 +239,7 @@ client / server separation
 ## Impact on Existing Code
 
 What changes to the existing code base are required?
+
 
 ## Alternatives
 
